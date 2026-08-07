@@ -13,14 +13,15 @@ let _secret: Uint8Array | null = null;
 
 function getSecret(): Uint8Array {
   if (_secret) return _secret;
-  if (process.env.AUTH_SECRET) {
-    _secret = new TextEncoder().encode(process.env.AUTH_SECRET);
+  const configuredSecret = process.env.AUTH_SECRET?.trim();
+  if (configuredSecret) {
+    _secret = new TextEncoder().encode(configuredSecret);
     return _secret;
   }
   if (process.env.NODE_ENV === "production") {
-    throw new Error("AUTH_SECRET must be set in production.");
+    console.warn("[auth] AUTH_SECRET is not set; using a generated persistent session secret.");
   }
-  // Persist a generated secret so sessions survive restarts in local dev.
+  // Persist a generated secret so sessions survive restarts.
   const secretPath = path.join(process.cwd(), "data", ".auth-secret");
   fs.mkdirSync(path.dirname(secretPath), { recursive: true });
   if (!fs.existsSync(secretPath)) {

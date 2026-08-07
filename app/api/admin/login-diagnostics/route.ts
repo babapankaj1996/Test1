@@ -28,6 +28,7 @@ export async function GET() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const rawPassword = process.env.ADMIN_PASSWORD;
   const password = rawPassword?.trim();
+  const authSecret = process.env.AUTH_SECRET?.trim();
   let database:
     | {
         reachable: true;
@@ -73,7 +74,8 @@ export async function GET() {
         adminEmail: maskEmail(email),
         adminPasswordSet: Boolean(rawPassword),
         adminPasswordHasBoundaryWhitespace: Boolean(rawPassword && rawPassword !== rawPassword.trim()),
-        authSecretSet: Boolean(process.env.AUTH_SECRET),
+        authSecretSet: Boolean(authSecret),
+        sessionSecretMode: authSecret ? "env" : "generated-file-fallback",
       },
       database,
     },
