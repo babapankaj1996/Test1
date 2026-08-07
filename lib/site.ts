@@ -1,6 +1,15 @@
-export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-).replace(/\/+$/, "");
+function normalizeSiteUrl(value?: string): string {
+  const raw = (value || "http://localhost:3000").trim().replace(/\/+$/, "");
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+  try {
+    return new URL(withProtocol).origin;
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+
+export const SITE_URL = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
 
 export const SITE_DEFAULTS = {
   name: "NovaPulse",
