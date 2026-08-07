@@ -141,23 +141,21 @@ function addColumnIfMissing(
 }
 
 function seed(db: SqliteDatabase) {
+  const envAdmin = getEnvAdminConfig();
   const hasAdmin = db.prepare("SELECT COUNT(*) AS n FROM admins").get() as { n: number };
   if (hasAdmin.n === 0) {
-    const hasAdminEmail = Boolean(process.env.ADMIN_EMAIL?.trim());
-    const hasAdminPassword = Boolean(process.env.ADMIN_PASSWORD);
-    if (process.env.NODE_ENV === "production" && (!hasAdminEmail || !hasAdminPassword)) {
+    if (process.env.NODE_ENV === "production" && !envAdmin) {
       throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD must be set before the production database is seeded.");
     }
-    const email = process.env.ADMIN_EMAIL?.trim() || "apecommteam@gmail.com";
-    const password = process.env.ADMIN_PASSWORD || "admin123";
-    if (process.env.NODE_ENV === "production" && password === "admin123") {
-      throw new Error("Refusing to seed the default admin password in production.");
-    }
+    const email = envAdmin?.email || "apecommteam@gmail.com";
+    const password = envAdmin?.password || "admin123";
     db.prepare("INSERT INTO admins (email, password_hash, name) VALUES (?, ?, ?)").run(
       email,
       bcrypt.hashSync(password, 10),
       "Admin"
     );
+  } else if (process.env.NODE_ENV === "production" && envAdmin) {
+    syncProductionAdmin(db, envAdmin.email, envAdmin.password);
   }
 
   const defaults: Record<string, string> = {
@@ -270,6 +268,44 @@ function seed(db: SqliteDatabase) {
 
   const hasPosts = db.prepare("SELECT COUNT(*) AS n FROM posts").get() as { n: number };
   if (hasPosts.n === 0) seedPosts(db);
+}
+
+function getEnvAdminConfig(): { email: string; password: string } | null {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  if (!email && !password) return null;
+  if (!email || !password) {
+    throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD must both be set.");
+  }
+  if (process.env.NODE_ENV === "production" && password === "admin123") {
+    throw new Error("Refusing to use the default admin password in production.");
+  }
+  return { email, password };
+}
+
+function syncProductionAdmin(db: SqliteDatabase, email: string, password: string) {
+  const passwordHash = bcrypt.hashSync(password, 10);
+  const existing = db.prepare("SELECT id FROM admins WHERE email = ?").get(email) as
+    | { id: number }
+    | undefined;
+
+  if (existing) {
+    db.prepare("UPDATE admins SET password_hash = ?, name = ? WHERE id = ?").run(
+      passwordHash,
+      "Admin",
+      existing.id
+    );
+  } else {
+    db.prepare("INSERT INTO admins (email, password_hash, name) VALUES (?, ?, ?)").run(
+      email,
+      passwordHash,
+      "Admin"
+    );
+  }
+
+  // This app has no admin-user management UI. Keep production login tied to
+  // the configured env account so stale seeded defaults cannot linger.
+  db.prepare("DELETE FROM admins WHERE email != ?").run(email);
 }
 
 function seedPosts(db: SqliteDatabase) {

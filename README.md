@@ -19,7 +19,7 @@ The SQLite database (`data/blog.db`) is created and seeded automatically on firs
 - Email: `apecommteam@gmail.com`
 - Password: `admin123`
 
-These defaults are for local development only. Production startup refuses to seed the database unless `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `AUTH_SECRET` are configured before the first run.
+These defaults are for local development only. In production, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `AUTH_SECRET` must be configured. On each production startup, the admin account is synced from `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
 ### Environment (`.env.local`, see `.env.example`)
 
@@ -27,7 +27,7 @@ These defaults are for local development only. Production startup refuses to see
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | Public site URL — used for canonical URLs, sitemap, Open Graph. **Required in production.** |
 | `AUTH_SECRET` | Session signing secret. Required in production; auto-generated into `data/.auth-secret` only in local development. |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seed admin credentials. Required in production before the database is first created. |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Production admin credentials. Required in production and synced on startup. |
 
 ## What's included
 
