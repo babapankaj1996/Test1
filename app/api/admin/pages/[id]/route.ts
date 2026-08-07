@@ -3,7 +3,7 @@ import { updateStaticPage, type PageInput } from "@/lib/admin";
 import { guardAdmin, handleApiError, readJson } from "@/lib/api-helpers";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { response } = await guardAdmin();
+  const { response } = await guardAdmin(req);
   if (response) return response;
   const id = parseInt((await params).id, 10);
   if (!Number.isInteger(id) || id <= 0) {

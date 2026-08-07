@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { session, response } = await guardAdmin();
+  const { session, response } = await guardAdmin(req);
   if (response) return response;
 
   try {

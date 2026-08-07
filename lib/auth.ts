@@ -17,6 +17,9 @@ function getSecret(): Uint8Array {
     _secret = new TextEncoder().encode(process.env.AUTH_SECRET);
     return _secret;
   }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET must be set in production.");
+  }
   // Persist a generated secret so sessions survive restarts in local dev.
   const secretPath = path.join(process.cwd(), "data", ".auth-secret");
   fs.mkdirSync(path.dirname(secretPath), { recursive: true });

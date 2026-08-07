@@ -13,21 +13,21 @@ npm run build && npm start
 
 The SQLite database (`data/blog.db`) is created and seeded automatically on first run — 6 sample posts, 3 categories, 6 tags, 4 footer pages, and the admin account.
 
-### Admin login
+### Local admin login
 
 - URL: `http://localhost:3000/admin`
 - Email: `apecommteam@gmail.com`
 - Password: `admin123`
 
-**Change these before deploying** — set `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars *before the first run* (they are used only when the database is first created), or update the `admins` row afterwards.
+These defaults are for local development only. Production startup refuses to seed the database unless `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `AUTH_SECRET` are configured before the first run.
 
 ### Environment (`.env.local`, see `.env.example`)
 
 | Variable | Purpose |
 | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | Public site URL — used for canonical URLs, sitemap, Open Graph. **Required in production.** |
-| `AUTH_SECRET` | Session signing secret. Auto-generated into `data/.auth-secret` if omitted. |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seed admin credentials (first run only). |
+| `AUTH_SECRET` | Session signing secret. Required in production; auto-generated into `data/.auth-secret` only in local development. |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seed admin credentials. Required in production before the database is first created. |
 
 ## What's included
 
@@ -52,8 +52,10 @@ The SQLite database (`data/blog.db`) is created and seeded automatically on firs
 
 **Security**
 - bcrypt-hashed admin credentials, JWT session in an httpOnly `SameSite=Lax` cookie
+- Production refuses missing `AUTH_SECRET` or default seeded admin credentials
 - Login rate limiting (8 attempts / 15 min)
 - Every `/api/admin/*` route requires a valid session; `/admin` pages redirect to login
+- Admin write APIs reject cross-origin requests
 - All content sanitized server-side (`sanitize-html`) — scripts, event handlers and `javascript:` URLs stripped
 - Uploads validated by real image decoding (sharp) and **re-encoded to WebP**, killing any embedded payloads; 8 MB limit
 
@@ -70,6 +72,5 @@ app/admin/        admin panel (login + guarded (panel) group)
 app/api/          public + admin REST APIs
 components/       shared UI, components/admin/ for panel UI
 lib/              db (schema+seed), queries, auth, sanitize, schema.org builders
-data/             SQLite database + auth secret (gitignored)
-public/uploads/   uploaded images (samples committed)
+data/             SQLite database, auth secret and runtime uploads (gitignored)
 ```

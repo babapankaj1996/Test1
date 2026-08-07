@@ -9,7 +9,7 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  const { response } = await guardAdmin();
+  const { response } = await guardAdmin(req);
   if (response) return response;
   try {
     const body = await readJson(req);

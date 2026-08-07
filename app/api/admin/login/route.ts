@@ -6,8 +6,12 @@ import {
   recordFailedAttempt,
   verifyCredentials,
 } from "@/lib/auth";
+import { sameOriginResponse } from "@/lib/api-helpers";
 
 export async function POST(req: NextRequest) {
+  const originResponse = sameOriginResponse(req);
+  if (originResponse) return originResponse;
+
   let body: { email?: string; password?: string };
   try {
     body = await req.json();

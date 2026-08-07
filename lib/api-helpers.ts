@@ -2,7 +2,41 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "./auth";
 import { ValidationError } from "./admin";
 
-export async function guardAdmin() {
+function firstHeaderValue(value: string | null): string {
+  return value?.split(",")[0]?.trim().toLowerCase() ?? "";
+}
+
+export function sameOriginResponse(req: Request): NextResponse | null {
+  const secFetchSite = firstHeaderValue(req.headers.get("sec-fetch-site"));
+  if (secFetchSite && !["same-origin", "same-site", "none"].includes(secFetchSite)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const origin = req.headers.get("origin");
+  if (!origin) return null;
+
+  let originUrl: URL;
+  try {
+    originUrl = new URL(origin);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const host = firstHeaderValue(req.headers.get("x-forwarded-host")) || firstHeaderValue(req.headers.get("host"));
+  const proto = firstHeaderValue(req.headers.get("x-forwarded-proto")) || new URL(req.url).protocol.replace(":", "");
+  if (!host || originUrl.host.toLowerCase() !== host || originUrl.protocol.replace(":", "") !== proto) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  return null;
+}
+
+export async function guardAdmin(req?: Request) {
+  if (req && !["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+    const response = sameOriginResponse(req);
+    if (response) return { session: null, response };
+  }
+
   const session = await requireAdmin();
   if (!session) {
     return { session: null, response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };

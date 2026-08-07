@@ -10,7 +10,7 @@ const ALLOWED_INPUT = new Set(["jpeg", "png", "webp", "avif", "gif"]);
 const MAX_WIDTH = 1920;
 
 export async function POST(req: NextRequest) {
-  const { response } = await guardAdmin();
+  const { response } = await guardAdmin(req);
   if (response) return response;
 
   let form: FormData;

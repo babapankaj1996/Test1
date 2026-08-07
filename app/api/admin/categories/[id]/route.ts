@@ -8,7 +8,7 @@ function parseId(raw: string): number | null {
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { response } = await guardAdmin();
+  const { response } = await guardAdmin(req);
   if (response) return response;
   const id = parseId((await params).id);
   if (!id) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
@@ -20,8 +20,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { response } = await guardAdmin();
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { response } = await guardAdmin(req);
   if (response) return response;
   const id = parseId((await params).id);
   if (!id) return NextResponse.json({ error: "Invalid id" }, { status: 400 });

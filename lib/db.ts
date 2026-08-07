@@ -1,17 +1,17 @@
-import Database from "better-sqlite3";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
+import { SqliteDatabase } from "./sqlite";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "blog.db");
 
-let _db: Database.Database | null = null;
+let _db: SqliteDatabase | null = null;
 
-export function getDb(): Database.Database {
+export function getDb(): SqliteDatabase {
   if (_db) return _db;
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  _db = new Database(DB_PATH);
+  _db = new SqliteDatabase(DB_PATH);
   _db.pragma("journal_mode = WAL");
   _db.pragma("foreign_keys = ON");
   migrate(_db);
@@ -19,7 +19,7 @@ export function getDb(): Database.Database {
   return _db;
 }
 
-function migrate(db: Database.Database) {
+function migrate(db: SqliteDatabase) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS admins (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -129,7 +129,7 @@ function migrate(db: Database.Database) {
 }
 
 function addColumnIfMissing(
-  db: Database.Database,
+  db: SqliteDatabase,
   table: string,
   column: string,
   ddl: string
@@ -140,11 +140,19 @@ function addColumnIfMissing(
   }
 }
 
-function seed(db: Database.Database) {
+function seed(db: SqliteDatabase) {
   const hasAdmin = db.prepare("SELECT COUNT(*) AS n FROM admins").get() as { n: number };
   if (hasAdmin.n === 0) {
-    const email = process.env.ADMIN_EMAIL || "apecommteam@gmail.com";
+    const hasAdminEmail = Boolean(process.env.ADMIN_EMAIL?.trim());
+    const hasAdminPassword = Boolean(process.env.ADMIN_PASSWORD);
+    if (process.env.NODE_ENV === "production" && (!hasAdminEmail || !hasAdminPassword)) {
+      throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD must be set before the production database is seeded.");
+    }
+    const email = process.env.ADMIN_EMAIL?.trim() || "apecommteam@gmail.com";
     const password = process.env.ADMIN_PASSWORD || "admin123";
+    if (process.env.NODE_ENV === "production" && password === "admin123") {
+      throw new Error("Refusing to seed the default admin password in production.");
+    }
     db.prepare("INSERT INTO admins (email, password_hash, name) VALUES (?, ?, ?)").run(
       email,
       bcrypt.hashSync(password, 10),
@@ -264,7 +272,7 @@ function seed(db: Database.Database) {
   if (hasPosts.n === 0) seedPosts(db);
 }
 
-function seedPosts(db: Database.Database) {
+function seedPosts(db: SqliteDatabase) {
   const catId = (slug: string) =>
     (db.prepare("SELECT id FROM categories WHERE slug = ?").get(slug) as { id: number }).id;
   const tagId = (slug: string) =>

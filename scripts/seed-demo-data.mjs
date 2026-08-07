@@ -1,10 +1,10 @@
 // Adds extra demo posts (published + drafts) on top of the base seed.
 // Idempotent: skips any slug that already exists. Run: node scripts/seed-demo-data.mjs
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import path from "path";
 
-const db = new Database(path.join(process.cwd(), "data", "blog.db"));
-db.pragma("foreign_keys = ON");
+const db = new DatabaseSync(path.join(process.cwd(), "data", "blog.db"));
+db.prepare("PRAGMA foreign_keys = ON").all();
 
 const catId = (slug) => db.prepare("SELECT id FROM categories WHERE slug = ?").get(slug)?.id ?? null;
 const ensureTag = (name, slug) => {
@@ -167,7 +167,8 @@ const linkTag = db.prepare("INSERT OR IGNORE INTO post_tags (post_id, tag_id) VA
 const insertFaq = db.prepare("INSERT INTO post_faqs (post_id, question, answer, sort_order) VALUES (?, ?, ?, ?)");
 
 let added = 0;
-const tx = db.transaction(() => {
+db.exec("BEGIN");
+try {
   for (const p of posts) {
     if (db.prepare("SELECT id FROM posts WHERE slug = ?").get(p.slug)) continue;
     const content = article(p.lead, p.sections);
@@ -187,8 +188,11 @@ const tx = db.transaction(() => {
     p.faqs.forEach(([q, a], i) => insertFaq.run(postId, q, a, i));
     added++;
   }
-});
-tx();
+  db.exec("COMMIT");
+} catch (err) {
+  db.exec("ROLLBACK");
+  throw err;
+}
 
 const counts = db.prepare("SELECT status, COUNT(*) n FROM posts GROUP BY status").all();
 console.log(`Added ${added} demo posts. Totals:`, counts.map((c) => `${c.status}=${c.n}`).join(", "));
