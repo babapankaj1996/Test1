@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NovaPulse — SEO-First Blog & Content Platform
 
-## Getting Started
+A futuristic, mobile-first publication built with **Next.js 16 (App Router) + TypeScript + Tailwind CSS 4 + SQLite**. Server-rendered pages, full structured-data coverage, secure admin panel, zero external services.
 
-First, run the development server:
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # development on http://localhost:3000
+# or production:
+npm run build && npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The SQLite database (`data/blog.db`) is created and seeded automatically on first run — 6 sample posts, 3 categories, 6 tags, 4 footer pages, and the admin account.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Admin login
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- URL: `http://localhost:3000/admin`
+- Email: `apecommteam@gmail.com`
+- Password: `admin123`
 
-## Learn More
+**Change these before deploying** — set `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars *before the first run* (they are used only when the database is first created), or update the `admins` row afterwards.
 
-To learn more about Next.js, take a look at the following resources:
+### Environment (`.env.local`, see `.env.example`)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Public site URL — used for canonical URLs, sitemap, Open Graph. **Required in production.** |
+| `AUTH_SECRET` | Session signing secret. Auto-generated into `data/.auth-secret` if omitted. |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seed admin credentials (first run only). |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## What's included
 
-## Deploy on Vercel
+**Public site**
+- `/` — hero with pinned/featured post, trending, latest (paginated), per-category sections, tag filter chips, search
+- `/blog` — all published posts with category filter, tag filter, full-text search, clean `?page=2` pagination
+- `/blog/<slug>` — post page with view counter, reading time, breadcrumbs, related posts, share buttons, collapsible FAQ accordion
+- `/category/<slug>` — per-category pages with their own SEO title/description
+- `/about`, `/contact`, `/privacy-policy`, `/terms-and-conditions` — DB-driven footer pages, editable from the admin panel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**SEO**
+- Dynamic meta titles/descriptions, canonical URLs, Open Graph + Twitter cards on every page
+- JSON-LD: WebSite, Organization, Article, FAQPage, BreadcrumbList
+- `/sitemap.xml` (auto-includes posts, categories, pages) and `/robots.txt`
+- One H1 per page, semantic headings, alt text everywhere, `?page/?tag/?q` variants marked noindex,follow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Admin panel** (`/admin`)
+- Dashboard with content stats
+- Posts: create/edit/delete, draft↔publish, slug, excerpt, HTML content, featured image upload + alt text, category, tags, multiple FAQs, SEO title/description, canonical override, featured/trending/pinned flags, publish date, author name
+- Categories & tags managers (tags act only as filters — no tag pages)
+- Footer pages editor, site settings (name, tagline, posts-per-page, social links)
+
+**Security**
+- bcrypt-hashed admin credentials, JWT session in an httpOnly `SameSite=Lax` cookie
+- Login rate limiting (8 attempts / 15 min)
+- Every `/api/admin/*` route requires a valid session; `/admin` pages redirect to login
+- All content sanitized server-side (`sanitize-html`) — scripts, event handlers and `javascript:` URLs stripped
+- Uploads validated by real image decoding (sharp) and **re-encoded to WebP**, killing any embedded payloads; 8 MB limit
+
+**Performance**
+- Server-side rendering, `next/image` with AVIF/WebP + responsive sizes, lazy loading below the fold
+- Almost no client JS on public pages (FAQ accordion is CSS-only `<details>`)
+- SQLite WAL mode, immutable cache headers on uploads
+
+## Project layout
+
+```
+app/(site)/       public pages (home, blog, post, category, footer pages)
+app/admin/        admin panel (login + guarded (panel) group)
+app/api/          public + admin REST APIs
+components/       shared UI, components/admin/ for panel UI
+lib/              db (schema+seed), queries, auth, sanitize, schema.org builders
+data/             SQLite database + auth secret (gitignored)
+public/uploads/   uploaded images (samples committed)
+```
