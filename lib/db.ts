@@ -154,7 +154,7 @@ function seed(db: SqliteDatabase) {
       bcrypt.hashSync(password, 10),
       "Admin"
     );
-  } else if (process.env.NODE_ENV === "production" && envAdmin) {
+  } else if (envAdmin) {
     syncProductionAdmin(db, envAdmin.email, envAdmin.password);
   }
 
