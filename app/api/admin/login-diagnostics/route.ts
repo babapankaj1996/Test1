@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -25,11 +26,14 @@ function classifyError(error: unknown): string {
 
 export async function GET() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const rawPassword = process.env.ADMIN_PASSWORD;
+  const password = rawPassword?.trim();
   let database:
     | {
         reachable: true;
         adminCount: number;
         adminEmails: string[];
+        passwordMatchesEnv: boolean | null;
       }
     | {
         reachable: false;
@@ -38,12 +42,17 @@ export async function GET() {
 
   try {
     const rows = getDb()
-      .prepare("SELECT email FROM admins ORDER BY id")
-      .all() as Array<{ email: string }>;
+      .prepare("SELECT email, password_hash FROM admins ORDER BY id")
+      .all() as Array<{ email: string; password_hash: string }>;
+    const configuredAdmin = email ? rows.find((row) => row.email === email) : undefined;
     database = {
       reachable: true,
       adminCount: rows.length,
       adminEmails: rows.map((row) => maskEmail(row.email) ?? "***"),
+      passwordMatchesEnv:
+        password && configuredAdmin
+          ? await bcrypt.compare(password, configuredAdmin.password_hash)
+          : null,
     };
   } catch (error) {
     database = {
@@ -62,7 +71,8 @@ export async function GET() {
       env: {
         adminEmailSet: Boolean(email),
         adminEmail: maskEmail(email),
-        adminPasswordSet: Boolean(process.env.ADMIN_PASSWORD),
+        adminPasswordSet: Boolean(rawPassword),
+        adminPasswordHasBoundaryWhitespace: Boolean(rawPassword && rawPassword !== rawPassword.trim()),
         authSecretSet: Boolean(process.env.AUTH_SECRET),
       },
       database,

@@ -272,7 +272,7 @@ function seed(db: SqliteDatabase) {
 
 function getEnvAdminConfig(): { email: string; password: string } | null {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  const password = process.env.ADMIN_PASSWORD;
+  const password = process.env.ADMIN_PASSWORD?.trim();
   if (!email && !password) return null;
   if (!email || !password) {
     throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD must both be set.");
