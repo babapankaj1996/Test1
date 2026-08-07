@@ -15,6 +15,13 @@ function normalizeRunResult(result: { lastInsertRowid: number | bigint; changes:
   };
 }
 
+function normalizeRow(row: unknown): unknown {
+  if (!row || typeof row !== "object" || Array.isArray(row) || ArrayBuffer.isView(row)) {
+    return row;
+  }
+  return { ...(row as Record<string, unknown>) };
+}
+
 function isNamedParams(param: SQLInputValue | Record<string, SQLInputValue>): param is Record<string, SQLInputValue> {
   return Boolean(param && typeof param === "object" && !ArrayBuffer.isView(param));
 }
@@ -37,17 +44,19 @@ export class Statement {
   all(...params: SqlParams[]): unknown[] {
     const normalized = params.map(normalizeParam);
     if (normalized.length > 0 && isNamedParams(normalized[0])) {
-      return this.stmt.all(normalized[0], ...(normalized.slice(1) as SQLInputValue[]));
+      return this.stmt
+        .all(normalized[0], ...(normalized.slice(1) as SQLInputValue[]))
+        .map(normalizeRow);
     }
-    return this.stmt.all(...(normalized as SQLInputValue[]));
+    return this.stmt.all(...(normalized as SQLInputValue[])).map(normalizeRow);
   }
 
   get(...params: SqlParams[]): unknown {
     const normalized = params.map(normalizeParam);
     if (normalized.length > 0 && isNamedParams(normalized[0])) {
-      return this.stmt.get(normalized[0], ...(normalized.slice(1) as SQLInputValue[]));
+      return normalizeRow(this.stmt.get(normalized[0], ...(normalized.slice(1) as SQLInputValue[])));
     }
-    return this.stmt.get(...(normalized as SQLInputValue[]));
+    return normalizeRow(this.stmt.get(...(normalized as SQLInputValue[])));
   }
 
   run(...params: SqlParams[]): RunResult {
@@ -75,7 +84,7 @@ export class SqliteDatabase {
   }
 
   pragma(sql: string): unknown[] {
-    return this.db.prepare(`PRAGMA ${sql}`).all();
+    return this.db.prepare(`PRAGMA ${sql}`).all().map(normalizeRow);
   }
 
   prepare(sql: string): Statement {
