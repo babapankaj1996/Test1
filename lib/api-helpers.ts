@@ -22,9 +22,12 @@ export function sameOriginResponse(req: Request): NextResponse | null {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const host = firstHeaderValue(req.headers.get("x-forwarded-host")) || firstHeaderValue(req.headers.get("host"));
-  const proto = firstHeaderValue(req.headers.get("x-forwarded-proto")) || new URL(req.url).protocol.replace(":", "");
-  if (!host || originUrl.host.toLowerCase() !== host || originUrl.protocol.replace(":", "") !== proto) {
+  const candidateHosts = [
+    firstHeaderValue(req.headers.get("x-forwarded-host")),
+    firstHeaderValue(req.headers.get("host")),
+    new URL(req.url).host.toLowerCase(),
+  ].filter(Boolean);
+  if (!candidateHosts.includes(originUrl.host.toLowerCase())) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

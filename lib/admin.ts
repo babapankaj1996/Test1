@@ -135,6 +135,28 @@ function normalizePostInput(input: PostInput, existingId?: number) {
   };
 }
 
+function postSqlParams(data: ReturnType<typeof normalizePostInput>) {
+  return {
+    title: data.title,
+    slug: data.slug,
+    excerpt: data.excerpt,
+    content: data.content,
+    featured_image: data.featured_image,
+    image_alt: data.image_alt,
+    category_id: data.category_id,
+    status: data.status,
+    is_featured: data.is_featured,
+    is_trending: data.is_trending,
+    is_pinned: data.is_pinned,
+    reading_time: data.reading_time,
+    author_name: data.author_name,
+    seo_title: data.seo_title,
+    seo_description: data.seo_description,
+    canonical_url: data.canonical_url,
+    published_at: data.published_at,
+  };
+}
+
 export function createPost(input: PostInput): Post {
   const db = getDb();
   const data = normalizePostInput(input);
@@ -148,7 +170,7 @@ export function createPost(input: PostInput): Post {
           @status, @is_featured, @is_trending, @is_pinned, @reading_time, @author_name,
           @seo_title, @seo_description, @canonical_url, @published_at)`
       )
-      .run({ ...data, tagIds: undefined, faqs: undefined, images: undefined });
+      .run(postSqlParams(data));
     const postId = Number(info.lastInsertRowid);
     syncPostRelations(postId, data.tagIds, data.faqs, data.images);
     return postId;
@@ -171,7 +193,7 @@ export function updatePost(id: number, input: PostInput): Post {
         seo_description=@seo_description, canonical_url=@canonical_url, published_at=@published_at,
         updated_at=datetime('now')
        WHERE id=@id`
-    ).run({ ...data, tagIds: undefined, faqs: undefined, images: undefined, id });
+    ).run({ ...postSqlParams(data), id });
     syncPostRelations(id, data.tagIds, data.faqs, data.images);
   });
   tx();
