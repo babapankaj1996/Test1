@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Category, Post, Tag } from "@/lib/types";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 interface FaqDraft {
   question: string;
@@ -261,17 +262,28 @@ export default function PostForm({
             maxLength={500}
           />
 
-          <label htmlFor="post-content" className={`${labelCls} mt-4`}>
+          <div className="mt-4">
+            <HtmlEditor
+              id="post-content"
+              label="Content"
+              value={content}
+              onChange={setContent}
+              rows={20}
+              placeholder="<h1>Main heading</h1>&#10;<p>Write your paragraph here...</p>&#10;<h2>Section heading</h2>&#10;<p>Paste HTML directly in this box.</p>"
+            />
+          </div>
+
+          <label htmlFor="post-content-legacy" className="hidden">
             Content (HTML)
           </label>
           <textarea
-            id="post-content"
+            id="post-content-legacy"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="field min-h-[360px] font-mono !text-[13px]"
+            className="hidden"
             placeholder="<p>Write your post content here…</p>&#10;<h2>Section heading</h2>&#10;<p>Use h2/h3 for headings, ul/ol for lists, img for images.</p>"
           />
-          <p className="mt-1.5 text-xs text-muted">
+          <p className="hidden">
             Allowed: headings (h2–h6), paragraphs, lists, links, images, tables, quotes, code.
             Scripts and unsafe markup are stripped automatically.
           </p>

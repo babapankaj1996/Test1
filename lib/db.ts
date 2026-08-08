@@ -34,6 +34,7 @@ function migrate(db: SqliteDatabase) {
       name TEXT NOT NULL UNIQUE,
       slug TEXT NOT NULL UNIQUE,
       description TEXT NOT NULL DEFAULT '',
+      content TEXT NOT NULL DEFAULT '',
       seo_title TEXT NOT NULL DEFAULT '',
       seo_description TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -114,6 +115,7 @@ function migrate(db: SqliteDatabase) {
   `);
 
   // Incremental migrations for databases created before these columns existed.
+  addColumnIfMissing(db, "categories", "content", "TEXT NOT NULL DEFAULT ''");
   addColumnIfMissing(db, "categories", "show_in_nav", "INTEGER NOT NULL DEFAULT 1");
   addColumnIfMissing(db, "categories", "show_in_footer", "INTEGER NOT NULL DEFAULT 1");
   addColumnIfMissing(db, "pages", "template", "TEXT NOT NULL DEFAULT 'default'");

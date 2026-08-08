@@ -3,6 +3,7 @@ export interface Category {
   name: string;
   slug: string;
   description: string;
+  content: string;
   seo_title: string;
   seo_description: string;
   show_in_nav: number;

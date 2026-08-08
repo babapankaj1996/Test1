@@ -240,6 +240,7 @@ export interface CategoryInput {
   name: string;
   slug?: string;
   description?: string;
+  content?: string;
   seo_title?: string;
   seo_description?: string;
   show_in_nav?: boolean;
@@ -265,6 +266,7 @@ function normalizeCategory(input: CategoryInput) {
     name,
     slug,
     description: sanitizeText(input.description ?? "").slice(0, 500),
+    content: sanitizeContent(input.content ?? "").slice(0, 50000),
     seo_title: sanitizeText(input.seo_title ?? "").slice(0, 200),
     seo_description: sanitizeText(input.seo_description ?? "").slice(0, 400),
     show_in_nav: input.show_in_nav === false ? 0 : 1,
@@ -281,8 +283,8 @@ export function createCategory(input: CategoryInput) {
   if (clash) throw new ValidationError("A category with this name or slug already exists");
   const info = db
     .prepare(
-      `INSERT INTO categories (name, slug, description, seo_title, seo_description, show_in_nav, show_in_footer)
-       VALUES (@name, @slug, @description, @seo_title, @seo_description, @show_in_nav, @show_in_footer)`
+      `INSERT INTO categories (name, slug, description, content, seo_title, seo_description, show_in_nav, show_in_footer)
+       VALUES (@name, @slug, @description, @content, @seo_title, @seo_description, @show_in_nav, @show_in_footer)`
     )
     .run(data);
   return db.prepare("SELECT * FROM categories WHERE id = ?").get(Number(info.lastInsertRowid));
@@ -298,7 +300,7 @@ export function updateCategory(id: number, input: CategoryInput) {
     .get(data.slug, data.name, id);
   if (clash) throw new ValidationError("A category with this name or slug already exists");
   db.prepare(
-    `UPDATE categories SET name=@name, slug=@slug, description=@description,
+    `UPDATE categories SET name=@name, slug=@slug, description=@description, content=@content,
       seo_title=@seo_title, seo_description=@seo_description,
       show_in_nav=@show_in_nav, show_in_footer=@show_in_footer
      WHERE id=@id`

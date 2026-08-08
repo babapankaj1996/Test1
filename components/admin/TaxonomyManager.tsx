@@ -2,12 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import HtmlEditor from "@/components/admin/HtmlEditor";
 
 interface Item {
   id: number;
   name: string;
   slug: string;
   description: string;
+  content?: string;
   seo_title?: string;
   seo_description?: string;
   show_in_nav?: number | boolean;
@@ -222,6 +224,16 @@ export default function TaxonomyManager({
                 />
                 Show in footer
               </label>
+            </div>
+            <div className="mt-4">
+              <HtmlEditor
+                id="category-content"
+                label="Category page content"
+                value={form.content ?? ""}
+                onChange={(content) => setForm({ ...form, content })}
+                rows={14}
+                placeholder="<h2>About this topic</h2>&#10;<p>Add SEO content for this category page.</p>"
+              />
             </div>
             <label className={`${labelCls} mt-4`}>SEO title</label>
             <input

@@ -67,6 +67,12 @@ export default function CategoryView({
             totalPages={posts.totalPages}
             basePath={`/${category.slug}`}
           />
+          {pageNum === 1 && category.content && (
+            <section
+              className="prose-content mx-auto mt-14 max-w-3xl border-t border-white/10 pt-10"
+              dangerouslySetInnerHTML={{ __html: category.content }}
+            />
+          )}
         </>
       ) : (
         <div className="glass mx-auto mt-12 max-w-md rounded-2xl p-10 text-center">
@@ -78,6 +84,12 @@ export default function CategoryView({
             Browse all posts
           </Link>
         </div>
+      )}
+      {posts.items.length === 0 && pageNum === 1 && category.content && (
+        <section
+          className="prose-content mx-auto mt-12 max-w-3xl"
+          dangerouslySetInnerHTML={{ __html: category.content }}
+        />
       )}
     </div>
   );
